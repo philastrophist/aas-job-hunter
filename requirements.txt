@@ -1,0 +1,9 @@
+pandas
+mpld3
+matplotlib
+bs4
+numpy
+jinja2
+lxml
+tqdm
+datefinder

@@ -23,7 +23,7 @@ def plot_times(df, ax=None, column='Application Deadline', engine='matplotlib'):
     ax.set_title('Number of jobs with outstanding deadlines: {}/{}'.format(navailable , len(df)))
     ax.set_xlabel('Days from today')
 
-    ax.set_xlim(max([-30, 0]), time_to_application.max())
+    ax.set_xlim(max([-30, time_to_application.min()]), time_to_application.max())
     ylim = ax.get_ylim()
     ax.axvline(0, color='k', linewidth=2)
     ax.axvspan(-365, 0, color='r', alpha=0.2)

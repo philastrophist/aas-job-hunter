@@ -1,11 +1,11 @@
-from functools import reduce
+from functools import reduce, partial
 from operator import or_
+import datefinder
+import re
+from urllib.request import urlopen
 
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
-import feedparser
 import pandas as pd
-import re
 import numpy as np
 from tqdm import tqdm
 
@@ -15,18 +15,24 @@ TABLE_HEADER = {'name': 'h1'}
 EQUIVALENT_FIELDS = [['Zip/Postal', 'Zip/Postal Code']]
 
 
-def strip_remaining_days(x):
-    try:
-        return x[:x.index('To event remaining')]
-    except (ValueError, AttributeError):
-        return x
+def parse_date(string):
+    if isinstance(string, str):
+        try:
+            finish = re.search(r'\d[a-zA-Z]', string).start() + 1
+        except AttributeError:
+            finish = None
+        return next(datefinder.find_dates(string[:finish]))
+    return np.nan
 
 
-def parse_dates(df, filt=('deadline', 'date')):
+def parse_dates(dataframe, filt=('deadline', 'date')):
+    df = dataframe.copy()
     for c in df.columns:
         if any(f in c.lower() for f in filt):
-            df[c] = df[c].apply(strip_remaining_days)
-            df[c] = pd.to_datetime(df[c])
+            try:
+                df[c] = df[c].apply(parse_date)
+            except (StopIteration, AttributeError, TypeError):
+                raise ValueError("date not found in the text in the '{}' column, where it was expected.".format(c))
     return df
 
 def scrape(position_name):
@@ -36,7 +42,7 @@ def scrape(position_name):
     html_tables = [i for i in soup.find_all('table')]
     tables = pd.read_html(html)
 
-    assert len(html_tables) == len(tables), "Parsing mismatch!"
+    assert len(html_tables) == len(tables), "Parsing mismatch!, length of main table is not the same as the number detail tables. The job register has likely changed!"
 
     for table, df in zip(html_tables, tables):
         df['href'] = [np.where(tag.has_attr('href'),tag.get('href'),"no link") for tag in table.find_all('a')]
@@ -46,7 +52,7 @@ def scrape(position_name):
     table = tables[position_name]
     infos = []
     urls = []
-    for link in tqdm(table['href'].astype(str)):
+    for link in tqdm(table['href'].astype(str), desc='Scraping details'):
         soup = BeautifulSoup(urlopen(BASE_URL+link).read().decode('utf-8'), "lxml")
         sections = soup.find_all(attrs={'class': 'field'})
         info = [u'{}'.format(i.text).replace('\xa0', '') for i in sections]
@@ -59,7 +65,10 @@ def scrape(position_name):
     infos = [dict(entry.split(':', 1) for entry in info) for info in infos]
     df = pd.DataFrame(infos)
     for a, b in EQUIVALENT_FIELDS:
-        df[a] = df[a].combine_first(df[b])
+        try:
+            df[a] = df[a].combine_first(df[b])
+        except KeyError:
+            pass
     df = parse_dates(df)
     df['urls'] = ['; '.join(u) if len(u) else np.nan for u in urls]
     df = df.rename(columns={'Title': 'Person Title'})
