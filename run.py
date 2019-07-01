@@ -17,11 +17,12 @@ position_name = 'Post-doctoral Positions & Fellowships'
 
 table, new = scraper.scrape(position_name)
 
-from notifiers import get_notifier
-email = get_notifier('mailgun')
-email.notify(**{'to': os.environ['EMAIL_ADDRESS'],
-             'domain': os.environ['MAILGUN_DOMAIN'],
-             'api_key': os.environ['MAILGUN_API_KEY'],
-             'from': 'postmaster@'+os.environ['MAILGUN_DOMAIN'],
-             'subject': '{} New Jobs available!'.format(new),
-             'message': 'There {} new positions available!'.format(new)})
+if len(new):
+    from notifiers import get_notifier
+    email = get_notifier('mailgun')
+    email.notify(**{'to': os.environ['EMAIL_ADDRESS'],
+                 'domain': os.environ['MAILGUN_DOMAIN'],
+                 'api_key': os.environ['MAILGUN_API_KEY'],
+                 'from': 'postmaster@'+os.environ['MAILGUN_DOMAIN'],
+                 'subject': '{} New Jobs available!'.format(new),
+                 'message': 'There {} new positions available!'.format(new)})
