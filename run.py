@@ -16,10 +16,11 @@ args = parser.parse_args()
 position_name = 'Post-doctoral Positions & Fellowships'
 
 table, new = scraper.scrape(position_name)
+assert new >= 0, "somethings wrong here"
+from notifiers import get_notifier
+email = get_notifier('mailgun')
 
-if len(new):
-    from notifiers import get_notifier
-    email = get_notifier('mailgun')
+if new > 0:
     email.notify(**{'to': os.environ['EMAIL_ADDRESS'],
                  'domain': os.environ['MAILGUN_DOMAIN'],
                  'api_key': os.environ['MAILGUN_API_KEY'],
