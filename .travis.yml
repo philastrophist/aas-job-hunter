@@ -9,3 +9,6 @@ install:
 
 script:
   - python run.py
+
+before_install:
+  -  openssl aes-256-cbc -K $encrypted_040c7bfba308_key -iv $encrypted_040c7bfba308_iv -in token.pickle.enc -out token.pickle -d
