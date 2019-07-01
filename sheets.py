@@ -90,8 +90,3 @@ def write(sheet, df):
 
 if __name__ == '__main__':
     sheet = login()
-    gvalues = read_gvalues(sheet)
-    df = gvalues2df(gvalues)
-    print(df)
-    gvalues = df2gvalues(df)
-    write_gvalues(sheet, gvalues)

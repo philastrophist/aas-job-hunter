@@ -8,10 +8,6 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument('--overwrite', action='store_true')
-args = parser.parse_args()
 
 position_name = 'Post-doctoral Positions & Fellowships'
 

@@ -16,7 +16,46 @@ import sheets
 BASE_URL = "https://jobregister.aas.org/"
 TABLE_HEADER = {'name': 'h1'}
 EQUIVALENT_FIELDS = (['Zip/Postal', 'Zip/Postal Code'], )
-HASH_COLUMNS = ('Application Deadline', 'Archive Date', 'Attention To', 'City', 'Country', 'Job Announcement Text')
+
+
+FIELDS = ['href',
+'Title',
+'Institution/Organization',
+'Location',
+'Posted',
+'Deadline',
+'Position Status',
+'Application Deadline',
+'Archive Date',
+'Attention To',
+'City',
+'Compensation Notes',
+'Country',
+'Current Status of Position',
+'Department Name',
+'Email',
+'Included Benefits',
+'Institution Classification/Type',
+'Institution/Company',
+'Institution/Company Job ID or Reference Code',
+'Job Announcement Text',
+'Job Category',
+'Phone',
+'Publish Date',
+'Related URLs',
+'Salary Max',
+'Salary Min',
+'Selection Deadline',
+'State/Province',
+'Street Line 1',
+'Street Line 2',
+'Subject',
+'Person Title',
+'URL',
+'Zip/Postal',
+'Zip/Postal Code',
+'urls']
+
 
 def parse_date(string):
     if isinstance(string, str):
@@ -38,15 +77,6 @@ def parse_dates(dataframe, filt=('deadline', 'date')):
                 raise ValueError("date not found in the text in the '{}' column, where it was expected.".format(c))
     return df
 
-def hasher(series):
-    x = xxhash.xxh32()
-    x.update(''.join(series.values))
-    return x.hexdigest()
-
-def make_hash_index(df, columns=HASH_COLUMNS):
-    df = df.copy()
-    df['hash'] = df[columns].applymap(str).apply(hasher, axis='columns')
-    return df.set_index('hash')
 
 def scrape_index_table(position_name):
     html = urlopen(BASE_URL).read().decode('utf-8')
@@ -108,8 +138,7 @@ def scrape(position_name):
     else:
         logging.info("no data in the sheets, writing anew")
         df = scrape_details_tables(index)
-    columns = [i for i in df.columns if i != 'href']
-    df = df[['href']+columns]
+    df = df.loc[:, FIELDS]
     logging.info("{} total jobs".format(len(df)))
     logging.info("begin google sheets write...")
     sheets.write(sheet, df)
