@@ -123,3 +123,6 @@ dmypy.json
 .pyre/
 .idea/
 *.cache
+credentials.json
+client_secret.json
+sheetID

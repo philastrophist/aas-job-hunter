@@ -1,3 +1,4 @@
+import logging
 from functools import reduce, partial
 from operator import or_
 import datefinder
@@ -8,12 +9,14 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+import xxhash
+import sheets
 
 
 BASE_URL = "https://jobregister.aas.org/"
 TABLE_HEADER = {'name': 'h1'}
-EQUIVALENT_FIELDS = [['Zip/Postal', 'Zip/Postal Code']]
-
+EQUIVALENT_FIELDS = (['Zip/Postal', 'Zip/Postal Code'], )
+HASH_COLUMNS = ('Application Deadline', 'Archive Date', 'Attention To', 'City', 'Country', 'Job Announcement Text')
 
 def parse_date(string):
     if isinstance(string, str):
@@ -35,7 +38,17 @@ def parse_dates(dataframe, filt=('deadline', 'date')):
                 raise ValueError("date not found in the text in the '{}' column, where it was expected.".format(c))
     return df
 
-def scrape(position_name):
+def hasher(series):
+    x = xxhash.xxh32()
+    x.update(''.join(series.values))
+    return x.hexdigest()
+
+def make_hash_index(df, columns=HASH_COLUMNS):
+    df = df.copy()
+    df['hash'] = df[columns].applymap(str).apply(hasher, axis='columns')
+    return df.set_index('hash')
+
+def scrape_index_table(position_name):
     html = urlopen(BASE_URL).read().decode('utf-8')
     soup = BeautifulSoup(html, "lxml")
     names = [i.text for i in soup.find_all(**TABLE_HEADER) if 'class' not in i.attrs]
@@ -48,11 +61,15 @@ def scrape(position_name):
         df['href'] = [np.where(tag.has_attr('href'),tag.get('href'),"no link") for tag in table.find_all('a')]
 
     tables = {n: v for n, v in zip(names, tables)}
+    df = tables[position_name]
+    df['href'] = df['href'].map(str)
+    return df
 
-    table = tables[position_name]
+
+def scrape_details_tables(index_table):
     infos = []
     urls = []
-    for link in tqdm(table['href'].astype(str), desc='Scraping details'):
+    for link in tqdm(index_table['href'].astype(str), desc='Scraping details'):
         soup = BeautifulSoup(urlopen(BASE_URL+link).read().decode('utf-8'), "lxml")
         sections = soup.find_all(attrs={'class': 'field'})
         info = [u'{}'.format(i.text).replace('\xa0', '') for i in sections]
@@ -72,6 +89,30 @@ def scrape(position_name):
     df = parse_dates(df)
     df['urls'] = ['; '.join(u) if len(u) else np.nan for u in urls]
     df = df.rename(columns={'Title': 'Person Title'})
-    return pd.concat([table, df], axis=1)
+    return pd.concat([index_table, df], axis=1)
 
+
+def scrape(position_name):
+    index = scrape_index_table(position_name)
+    sheet = sheets.login()
+    logging.info("Reading google sheets")
+    df = sheets.read(sheet)
+    old_length = len(df)
+    if not df.empty:
+        logging.info("Data exists in the sheets only fetching missing ones")
+        missing_ones = index.loc[~index['href'].isin(df['href'])]
+        logging.info("{} missing indices".format(len(missing_ones)))
+        if len(missing_ones):
+            missing_df = scrape_details_tables(missing_ones)
+            df = df.append(missing_df)
+    else:
+        logging.info("no data in the sheets, writing anew")
+        df = scrape_details_tables(index)
+    columns = [i for i in df.columns if i != 'href']
+    df = df[['href']+columns]
+    logging.info("{} total jobs".format(len(df)))
+    logging.info("begin google sheets write...")
+    sheets.write(sheet, df)
+    logging.info("complete")
+    return df, len(df) - old_length
 
