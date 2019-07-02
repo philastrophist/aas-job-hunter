@@ -127,9 +127,9 @@ def scrape(position_name):
     sheet = sheets.login()
     logging.info("Reading google sheets")
     df = sheets.read(sheet)
-    old_length = len(df)
+    missing_df = None
     if not df.empty:
-        logging.info("Data exists in the sheets only fetching missing ones")
+        logging.info("Data exists in the sheets, only fetching missing ones")
         missing_ones = index.loc[~index['href'].isin(df['href'])]
         logging.info("{} missing indices".format(len(missing_ones)))
         if len(missing_ones):
@@ -143,5 +143,5 @@ def scrape(position_name):
     logging.info("begin google sheets write...")
     sheets.write(sheet, df)
     logging.info("complete")
-    return df, len(df) - old_length
+    return df, missing_df
 
