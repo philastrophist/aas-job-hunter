@@ -119,14 +119,16 @@ def scrape_details_tables(index_table):
     df = parse_dates(df)
     df['urls'] = ['; '.join(u) if len(u) else np.nan for u in urls]
     df = df.rename(columns={'Title': 'Person Title'})
-    return pd.concat([index_table, df], axis=1)
+    df['href'] = index_table.href.values
+    return pd.merge(index_table, df, on='href', suffixes=('', '_1'))
 
 
-def scrape(position_name):
+def scrape(position_name, write=False):
     index = scrape_index_table(position_name)
     sheet = sheets.login()
     logging.info("Reading google sheets")
     df = sheets.read(sheet)
+    old_len = len(df)
     missing_df = None
     if not df.empty:
         logging.info("Data exists in the sheets, only fetching missing ones")
@@ -140,8 +142,11 @@ def scrape(position_name):
         df = scrape_details_tables(index)
     df = df.loc[:, FIELDS]
     logging.info("{} total jobs".format(len(df)))
-    logging.info("begin google sheets write...")
-    sheets.write(sheet, df)
-    logging.info("complete")
+    assert not df['href'].isnull().any(), "Merge has failed for some reason, abort..."
+    assert len(df) >= old_len, "This action would delete data, abort..."
+    if write:
+        logging.info("begin google sheets write...")
+        sheets.write(sheet, df)
+        logging.info("complete")
     return df, missing_df
 
