@@ -127,7 +127,14 @@ def scrape_details_tables(index_table):
     return pd.merge(index_table, df, on='href', suffixes=('', '_1'))
 
 
-def scrape(position_name, write=False):
+def scrape(position_name, write=False, cutoff_days=None):
+    """
+
+    :param position_name: Which table to read on aas-job-register
+    :param write: Shall I write to sheets?
+    :param cutoff_days: int or None; number of days after the official archive date to remove the job from the list
+    :return:
+    """
     index = scrape_index_table(position_name)
     sheet = sheets.login()
     logging.info("Reading google sheets")
@@ -148,9 +155,14 @@ def scrape(position_name, write=False):
     logging.info("{} total jobs".format(len(df)))
     assert not df['href'].isnull().any(), "Merge has failed for some reason, abort..."
     assert len(df) >= old_len, "This action would delete data, abort..."
+    removed = None
+    if cutoff_days is not None:
+        archived = (pd.to_datetime(df['Archive Date']) - pd.to_datetime('now')) < pd.to_timedelta(-cutoff_days, 'days')
+        removed = df.loc[archived]
+        df = df.loc[~archived]
     if write:
         logging.info("begin google sheets write...")
         sheets.write(sheet, df)
         logging.info("complete")
-    return df, missing_df
+    return df, missing_df, removed
 

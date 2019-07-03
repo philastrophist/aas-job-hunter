@@ -11,7 +11,7 @@ Organise jobs from the [AAS website](https://jobregister.aas.org) with the help 
 
 ## Installation
 1. Fork this repository
-1. Make a copy of the spreadsheet [here](https://docs.google.com/spreadsheets/d/1XX8PU3nuFPVLojfWhbhnhc3yuM3pmfNK6qiN1wheQQI/edit?usp=sharing)
+1. Make a copy of the spreadsheet [here](https://docs.google.com/spreadsheets/d/1Ns2YIzKOQusU_3RDMPKFgdVe8OBYcDvO85fu3DicvME/edit?usp=sharing)
 (not updated)
 1. Save the `SPREADSHEET_ID` as an environment variable
 1. Save the required `MAILGUN` environment variables for notifications (or modify that bit)

@@ -11,7 +11,9 @@ logging.basicConfig(level=logging.INFO)
 
 position_name = 'Post-doctoral Positions & Fellowships'
 
-table, new = scraper.scrape(position_name, write=True)
+table, new, archived = scraper.scrape(position_name, write=True, cutoff_days=60)
+if archived is not None:
+    logging.info("Archived {} jobs".format(len(archived)))
 if new is None:
     exit(0)
 
