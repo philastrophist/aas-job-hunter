@@ -81,16 +81,20 @@ def parse_dates(dataframe, filt=('deadline', 'date')):
 def scrape_index_table(position_name):
     html = urlopen(BASE_URL).read().decode('utf-8')
     soup = BeautifulSoup(html, "lxml")
-    names = [i.text for i in soup.find_all(**TABLE_HEADER) if 'class' not in i.attrs]
-    html_tables = [i for i in soup.find_all('table')]
-    tables = pd.read_html(html)
 
-    assert len(html_tables) == len(tables), "Parsing mismatch!, length of main table is not the same as the number detail tables. The job register has likely changed!"
+    content = soup.find(**{'class': 'content'})
+    headers_tables = content.findChildren(recursive=False)
+    tables = {}
+    previous = None
+    for item in headers_tables:
+        if item.name == 'h1':
+            tables[item.text] = None
+        elif (item.name == 'table') and (previous.name == 'h1'):
+            df = pd.read_html(str(item))[0]
+            df['href'] = [np.where(tag.has_attr('href'), tag.get('href'), "no link") for tag in item.find_all('a')]
+            tables[previous.text] = df
+        previous = item
 
-    for table, df in zip(html_tables, tables):
-        df['href'] = [np.where(tag.has_attr('href'),tag.get('href'),"no link") for tag in table.find_all('a')]
-
-    tables = {n: v for n, v in zip(names, tables)}
     df = tables[position_name]
     df['href'] = df['href'].map(str)
     return df
