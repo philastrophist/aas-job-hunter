@@ -7,7 +7,8 @@ Organise jobs from the [AAS website](https://jobregister.aas.org) with the help 
 * See when your deadlines are approaching ![plot](graph.PNG)
 * Keep track of discarded or complete applications ![plot](completed.PNG)
 * Integrate with [travis-ci](http://travis-ci.com) to automatically keep your database up to date
-* Not pesky to-do lists or heavy websites to host
+* No pesky to-do lists or heavy websites to host
+* Add your own jobs manually to the list to see everything in one place
 
 ## Installation
 1. Fork this repository
