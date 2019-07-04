@@ -13,9 +13,9 @@ position_name = 'Post-doctoral Positions & Fellowships'
 
 table, new, archived = scraper.scrape(position_name, write=True, cutoff_days=60)
 if new is not None:
-    logging.info("Found {} new jobs".format(len(new)))
+    logging.info("Found {} new jobs:\n{}".format(len(new), '\n* '.join(new.Title)))
 if archived is not None:
-    logging.info("Archived {} jobs".format(len(archived)))
+    logging.info("Archived {} jobs:\n{}".format(len(archived), '\n* '.join(archived.Title)))
 if new is None:
     exit(0)
 
