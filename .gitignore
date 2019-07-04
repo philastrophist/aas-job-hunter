@@ -125,4 +125,5 @@ dmypy.json
 *.cache
 credentials.json
 client_secret.json
+token.pickle
 sheetID
