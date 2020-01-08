@@ -11,4 +11,4 @@ script:
   - python run.py
 
 before_install:
-  -  openssl aes-256-cbc -K $encrypted_040c7bfba308_key -iv $encrypted_040c7bfba308_iv -in token.pickle.enc -out token.pickle -d
+  - openssl aes-256-cbc -K $encrypted_7368cc71a923_key -iv $encrypted_7368cc71a923_iv -in token.pickle.enc -out token.pickle -d
